@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="sl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moja prva javna stran</title>
+<style>
+  :root { --modra: #00386C; --svetla: #EAF1F8; --siva: #5f6368; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.55; color: #1F2A3A; background: #fff; }
+  header { background: var(--modra); color: #fff; padding: 2rem 1rem; }
+  header h1 { margin: 0 auto; max-width: 44rem; font-size: 1.8rem; }
+  header p { margin: .4rem auto 0; max-width: 44rem; opacity: .85; }
+  main { max-width: 44rem; margin: 0 auto; padding: 1rem; }
+  .opomba { background: var(--svetla); padding: .75rem 1rem; border-left: 4px solid var(--modra); font-size: .95rem; }
+  article { border-bottom: 1px solid #dde3ea; padding: 1rem 0; }
+  article h2 { margin: 0 0 .25rem; font-size: 1.2rem; }
+  article a { color: var(--modra); }
+  .datum { color: var(--siva); font-size: .9rem; margin: 0 0 .4rem; }
+  footer { max-width: 44rem; margin: 0 auto; padding: 1rem; color: var(--siva); font-size: .85rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="naslov">Moja prva javna stran</h1>
+  <p>Statična stran na GitHub Pages, vsebina pride iz WordPressa prek REST API.</p>
+</header>
+<main>
+  <p class="opomba">Za nove novice datoteke ni treba spreminjati. Ob vsakem obisku se naložijo iz vira: <span id="vir"></span></p>
+  <div id="seznam">Nalagam novice …</div>
+</main>
+<footer>SMSUV · vaja 3 · <span id="avtor"></span></footer>
+
+<script>
+// 1) NASTAVITVE: to lahko spreminjate
+const IME = 'Omar Bišić';                  // vaše ime, izpiše se v nogi
+const NASLOV = 'DigitalFlow – Novice';     // naslov na vrhu strani
+const VIR = 'https://wordpress.org/news';     // naslov mesta WordPress z javnim REST API, brez / na koncu
+const STEVILO = 5;                            // koliko prispevkov prikažemo
+
+// 2) NASLOV API: zahtevamo le polja, ki jih potrebujemo
+const API = VIR + '/wp-json/wp/v2/posts?per_page=' + STEVILO + '&_fields=title,link,date,excerpt';
+document.getElementById('naslov').textContent = NASLOV;
+document.title = NASLOV;
+document.getElementById('avtor').textContent = IME;
+document.getElementById('vir').textContent = VIR;
+
+// 3) POMOŽNA FUNKCIJA: iz HTML naredi golo besedilo (varno, brez innerHTML)
+function goloBesedilo(html) {
+  return new DOMParser().parseFromString(html, 'text/html').body.textContent.trim();
+}
+
+// 4) ZAHTEVA IN IZRIS: natakar (API) prinese JSON, mi ga prikažemo
+fetch(API)
+  .then(function (odgovor) {
+    if (!odgovor.ok) { throw new Error('strežnik je vrnil napako ' + odgovor.status); }
+    return odgovor.json();
+  })
+  .then(function (prispevki) {
+    const seznam = document.getElementById('seznam');
+    seznam.textContent = '';
+    prispevki.forEach(function (p) {
+      const clanek = document.createElement('article');
+      const h2 = document.createElement('h2');
+      const povezava = document.createElement('a');
+      povezava.href = p.link;
+      povezava.textContent = goloBesedilo(p.title.rendered);
+      h2.appendChild(povezava);
+      const datum = document.createElement('p');
+      datum.className = 'datum';
+      datum.textContent = new Date(p.date).toLocaleDateString('sl-SI', { day: 'numeric', month: 'long', year: 'numeric' });
+      const povzetek = document.createElement('p');
+      povzetek.textContent = goloBesedilo(p.excerpt.rendered);
+      clanek.append(h2, datum, povzetek);
+      seznam.appendChild(clanek);
+    });
+  })
+  .catch(function (napaka) {
+    document.getElementById('seznam').textContent = 'Novic ni bilo mogoče naložiti (' + napaka.message + '). Preverite internetno povezavo. Če težava ostane, preverite nastavitev VIR v kodi.';
+  });
+</script>
+</body>
+</html>
